@@ -1,0 +1,55 @@
+package com.example.taskmanagerapp;
+
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.widget.Button;
+import android.widget.EditText;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+
+public class TaskDetailActivity extends AppCompatActivity {
+    private EditText editTextTitle, editTextDescription;
+    private TaskViewModel taskViewModel;
+    private int taskId = -1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_task_detail);
+
+        editTextTitle = findViewById(R.id.editTextTitle);
+        editTextDescription = findViewById(R.id.editTextDescription);
+        Button buttonSave = findViewById(R.id.buttonSave);
+
+        taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
+
+        if (getIntent().hasExtra("taskId")) {
+            taskId = getIntent().getIntExtra("taskId", -1);
+            taskViewModel.getTaskById(taskId).observe(this, task -> {
+                if (task != null) {
+                    editTextTitle.setText(task.getTitle());
+                    editTextDescription.setText(task.getDescription());
+                }
+            });
+        }
+
+        buttonSave.setOnClickListener(v -> {
+            String title = editTextTitle.getText().toString().trim();
+            String description = editTextDescription.getText().toString().trim();
+
+            if (TextUtils.isEmpty(title) || TextUtils.isEmpty(description)) {
+                return;
+            }
+
+            if (taskId != -1) {
+                Task updatedTask = new Task(title, description, "Pending");
+                updatedTask.setId(taskId);
+                taskViewModel.update(updatedTask);
+            } else {
+                Task newTask = new Task(title, description, "Pending");
+                taskViewModel.insert(newTask);
+            }
+            finish();
+        });
+    }
+}
